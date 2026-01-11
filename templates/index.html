@@ -891,7 +891,7 @@
             <!-- Интерфейс для ГАИ -->
             <div class="workspace" id="gaiInterface" style="display: none;">
                 <div class="controls">
-                    <div style="flex: 1; max-width: 400px;">
+                    <div style="flex: 1;">
                         <input type="text" id="routeInput" class="search-box"
                             placeholder="Маршрут (например: Москва → Санкт-Петербург)" style="margin: 0;"
                             oninput="saveCurrentProject()">
@@ -998,119 +998,186 @@
         let projects = [];
         let activeProjectId = null;
 
+        // ==================== УПРАВЛЕНИЕ ПРОЕКТАМИ ====================
+        // Всегда работаем с ID как с числами
+
         function initProjects() {
+            console.log('=== INIT PROJECTS START ===');
             const savedProjects = localStorage.getItem('hotel_projects');
             const savedActiveId = localStorage.getItem('hotel_active_project');
+            
+            console.log('Saved projects:', savedProjects);
+            console.log('Saved active ID:', savedActiveId);
 
             if (savedProjects) {
-                projects = JSON.parse(savedProjects);
-
-                // Миграция старых проектов - добавляем type если его нет
-                projects = projects.map(project => {
-                    if (!project.type) {
-                        project.type = 'hotel';
-                    }
-                    if (!project.selectedGuests) {
-                        project.selectedGuests = [];
-                    }
-                    if (!project.route) {
-                        project.route = '';
-                    }
-                    return project;
-                });
-
-                // Сохраняем мигрированные проекты
-                saveProjects();
+                try {
+                    projects = JSON.parse(savedProjects);
+                    
+                    // Миграция: приводим все ID к числам и добавляем недостающие поля
+                    projects = projects.map(project => {
+                        return {
+                            id: Number(project.id),
+                            name: project.name || 'Без названия',
+                            type: project.type || 'hotel',
+                            guests: project.guests || [],
+                            rooms: project.rooms || [],
+                            selectedGuests: project.selectedGuests || [],
+                            route: project.route || '',
+                            created: project.created || new Date().toISOString(),
+                            modified: project.modified || new Date().toISOString()
+                        };
+                    });
+                    
+                    // Сохраняем нормализованные проекты
+                    localStorage.setItem('hotel_projects', JSON.stringify(projects));
+                } catch (e) {
+                    console.error('Ошибка загрузки проектов:', e);
+                    projects = [];
+                }
             }
 
+            // Создаём первый проект если нет ни одного
             if (projects.length === 0) {
-                // Создаём первый проект по умолчанию
                 const firstProject = {
                     id: Date.now(),
                     name: 'Новое распределение',
-                    type: 'hotel', // 'hotel' или 'gai'
+                    type: 'hotel',
                     guests: [],
                     rooms: [],
-                    selectedGuests: [], // для типа 'gai'
-                    route: '', // для типа 'gai'
+                    selectedGuests: [],
+                    route: '',
                     created: new Date().toISOString(),
                     modified: new Date().toISOString()
                 };
                 projects.push(firstProject);
                 activeProjectId = firstProject.id;
+                localStorage.setItem('hotel_projects', JSON.stringify(projects));
+                localStorage.setItem('hotel_active_project', String(activeProjectId));
             } else {
-                activeProjectId = savedActiveId ? parseInt(savedActiveId) : projects[0].id;
+                // Устанавливаем активный проект
+                if (savedActiveId) {
+                    const savedId = Number(savedActiveId);
+                    const exists = projects.some(p => p.id === savedId);
+                    activeProjectId = exists ? savedId : projects[0].id;
+                } else {
+                    activeProjectId = projects[0].id;
+                }
+                localStorage.setItem('hotel_active_project', String(activeProjectId));
             }
 
+            console.log('Projects after init:', projects);
+            console.log('Active project ID:', activeProjectId);
+
+            // Загружаем активный проект и отрисовываем интерфейс
             loadProject(activeProjectId);
+            renderProjects();
+            
+            console.log('=== INIT PROJECTS END ===');
         }
 
         function saveProjects() {
-            localStorage.setItem('hotel_projects', JSON.stringify(projects));
-            localStorage.setItem('hotel_active_project', activeProjectId);
+            try {
+                localStorage.setItem('hotel_projects', JSON.stringify(projects));
+                localStorage.setItem('hotel_active_project', String(activeProjectId));
+            } catch (e) {
+                console.error('Ошибка сохранения проектов:', e);
+                showAlert('Ошибка сохранения данных', 'error');
+            }
+        }
+
+        function getActiveProject() {
+            return projects.find(p => p.id === activeProjectId);
+        }
+
+        function getProjectById(projectId) {
+            const id = Number(projectId);
+            return projects.find(p => p.id === id);
         }
 
         function saveCurrentProject() {
-            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
-            if (project) {
-                project.guests = guests;
-                if (project.type === 'gai') {
-                    project.selectedGuests = rooms; // для ГАИ используем rooms как selectedGuests
-                    project.route = document.getElementById('routeInput')?.value || '';
-                } else {
-                    project.rooms = rooms;
-                }
-                project.modified = new Date().toISOString();
-                saveProjects();
+            const project = getActiveProject();
+            if (!project) {
+                console.error('Активный проект не найден:', activeProjectId);
+                return;
             }
+
+            project.guests = guests;
+            if (project.type === 'gai') {
+                project.selectedGuests = rooms;
+                const routeInput = document.getElementById('routeInput');
+                project.route = routeInput ? routeInput.value : '';
+            } else {
+                project.rooms = rooms;
+            }
+            project.modified = new Date().toISOString();
+            saveProjects();
         }
 
         function loadProject(projectId) {
-            const project = projects.find(p => Number(p.id) === Number(projectId));
-            if (project) {
-                // Обновляем активный проект (сохраняем как число)
-                activeProjectId = Number(project.id);
-
-                // Сохраняем выбор
-                localStorage.setItem('hotel_active_project', activeProjectId);
-
-                console.log('Загружен проект:', project.name, 'ID:', activeProjectId);
-
-                guests = JSON.parse(JSON.stringify(project.guests || []));
-
-                if (project.type === 'gai') {
-                    rooms = JSON.parse(JSON.stringify(project.selectedGuests || []));
-                    // Показываем интерфейс ГАИ
-                    document.getElementById('hotelInterface').style.display = 'none';
-                    document.getElementById('gaiInterface').style.display = 'block';
-                    setTimeout(() => {
-                        if (document.getElementById('routeInput')) {
-                            document.getElementById('routeInput').value = project.route || '';
-                        }
-                    }, 0);
-                } else {
-                    rooms = JSON.parse(JSON.stringify(project.rooms || []));
-                    // Показываем интерфейс размещения
-                    document.getElementById('hotelInterface').style.display = 'block';
-                    document.getElementById('gaiInterface').style.display = 'none';
-                }
-
-                updateFilters();
-                renderGuests();
-                renderRooms();
-                renderGaiList();
-
-                // Важно: рендерим проекты после обновления activeProjectId
-                renderProjects();
-
-                // Очищаем превью
-                document.getElementById('previewContainer').innerHTML = '<div class="preview-empty">Добавьте участников и распределите их для предпросмотра</div>';
-
-                // Пробуем загрузить предпросмотр если есть данные
-                setTimeout(() => {
-                    debouncePreview();
-                }, 500);
+            const id = Number(projectId);
+            const project = getProjectById(id);
+            
+            if (!project) {
+                console.error('Проект не найден:', id);
+                showAlert('Проект не найден', 'error');
+                return;
             }
+
+            // Сохраняем текущий проект перед переключением
+            if (activeProjectId && activeProjectId !== id) {
+                saveCurrentProject();
+            }
+
+            // Устанавливаем новый активный проект
+            activeProjectId = id;
+            localStorage.setItem('hotel_active_project', String(activeProjectId));
+
+            console.log('Загружен проект:', project.name, 'ID:', activeProjectId, 'Type:', project.type);
+
+            // Загружаем данные проекта (глубокое копирование)
+            guests = JSON.parse(JSON.stringify(project.guests || []));
+
+            if (project.type === 'gai') {
+                rooms = JSON.parse(JSON.stringify(project.selectedGuests || []));
+                // Показываем интерфейс ГАИ
+                document.getElementById('hotelInterface').style.display = 'none';
+                document.getElementById('gaiInterface').style.display = 'block';
+                setTimeout(() => {
+                    const routeInput = document.getElementById('routeInput');
+                    if (routeInput) {
+                        routeInput.value = project.route || '';
+                    }
+                }, 0);
+            } else {
+                rooms = JSON.parse(JSON.stringify(project.rooms || []));
+                
+                // Нормализуем rooms - добавляем guests если отсутствует
+                rooms = rooms.map(room => {
+                    if (!room.guests) {
+                        room.guests = [];
+                    }
+                    return room;
+                });
+                
+                // Показываем интерфейс размещения
+                document.getElementById('hotelInterface').style.display = 'block';
+                document.getElementById('gaiInterface').style.display = 'none';
+            }
+
+            // Обновляем интерфейс
+            updateFilters();
+            renderGuests();
+            renderRooms();
+            renderGaiList();
+            renderProjects();
+
+            // Очищаем превью
+            document.getElementById('previewContainer').innerHTML = '<div class="preview-empty">Добавьте участников и распределите их для предпросмотра</div>';
+
+            // Пробуем загрузить предпросмотр если есть данные
+            setTimeout(() => {
+                debouncePreview();
+            }, 500);
         }
 
         function createNewProject() {
@@ -1152,7 +1219,7 @@
         }
 
         function renameProject(projectId) {
-            const project = projects.find(p => Number(p.id) === Number(projectId));
+            const project = getProjectById(projectId);
             if (!project) return;
 
             const newName = prompt('Новое название:', project.name);
@@ -1171,16 +1238,18 @@
                 return;
             }
 
-            const project = projects.find(p => Number(p.id) === Number(projectId));
+            const project = getProjectById(projectId);
             if (!project) return;
 
             if (!confirm(`Удалить проект "${project.name}"? Все данные будут потеряны.`)) {
                 return;
             }
 
-            projects = projects.filter(p => Number(p.id) !== Number(projectId));
+            const id = Number(projectId);
+            projects = projects.filter(p => p.id !== id);
 
-            if (Number(activeProjectId) === Number(projectId)) {
+            // Если удалили активный проект, переключаемся на первый
+            if (activeProjectId === id) {
                 loadProject(projects[0].id);
             } else {
                 saveProjects();
@@ -1192,6 +1261,13 @@
 
         function renderProjects() {
             const container = document.getElementById('projectsBar');
+            
+            if (!container) {
+                console.error('projectsBar контейнер не найден!');
+                return;
+            }
+
+            console.log('Рендерим проекты:', projects.length, 'активный:', activeProjectId);
 
             // Приводим activeProjectId к числу для корректного сравнения
             const currentId = Number(activeProjectId);
@@ -1245,13 +1321,14 @@
         }
 
         async function updatePreviewAuto() {
-            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
-            const container = document.getElementById('previewContainer');
+            const project = getActiveProject();
+            if (!project) return;
             
             // Проверяем есть ли что показывать
-            if (project && project.type === 'gai') {
+            if (project.type === 'gai') {
                 if (rooms.length === 0) return;
-                const route = document.getElementById('routeInput')?.value.trim() || '';
+                const routeInput = document.getElementById('routeInput');
+                const route = routeInput ? routeInput.value.trim() : '';
                 if (!route) return;
             } else {
                 const roomsWithGuests = rooms.filter(r => r.guests && r.guests.length > 0);
@@ -1292,10 +1369,12 @@
 
         function clearSession() {
             if (confirm('Вы уверены? Все данные текущего проекта будут удалены.')) {
-                const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+                const project = getActiveProject();
                 if (project) {
                     project.guests = [];
                     project.rooms = [];
+                    project.selectedGuests = [];
+                    project.route = '';
                     project.modified = new Date().toISOString();
                 }
                 
@@ -1309,6 +1388,7 @@
                 saveProjects();
                 renderGuests();
                 renderRooms();
+                renderGaiList();
                 renderProjects();
                 showAlert('Данные проекта очищены', 'success');
             }
@@ -1531,6 +1611,11 @@
             }
 
             container.innerHTML = rooms.map(room => {
+                // Проверяем и нормализуем guests
+                if (!room.guests) {
+                    room.guests = [];
+                }
+                
                 const capacityText = room.capacity === 1 ? '1 место' : `${room.capacity} мест`;
                 const occupancy = room.guests.length;
                 const isFull = occupancy >= room.capacity;
@@ -1643,11 +1728,11 @@
         // ============= ГАИ ФУНКЦИИ =============
 
         function renderGaiList() {
-            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+            const project = getActiveProject();
             if (!project || project.type !== 'gai') return;
 
             const container = document.getElementById('gaiList');
-            if (!container) return; // Безопасная проверка
+            if (!container) return;
 
             if (rooms.length === 0) {
                 container.innerHTML = `
@@ -1747,13 +1832,14 @@
         }
 
         async function generateGaiPDF() {
-            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+            const project = getActiveProject();
             if (rooms.length === 0) {
                 showAlert('Добавьте хотя бы одного участника в список', 'error');
                 return;
             }
 
-            const route = document.getElementById('routeInput').value.trim();
+            const routeInput = document.getElementById('routeInput');
+            const route = routeInput ? routeInput.value.trim() : '';
             if (!route) {
                 showAlert('Укажите маршрут', 'error');
                 return;
@@ -1785,10 +1871,12 @@
         }
 
         async function updatePreview() {
-            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+            const project = getActiveProject();
+            if (!project) return;
+            
             const container = document.getElementById('previewContainer');
 
-            if (project && project.type === 'gai') {
+            if (project.type === 'gai') {
                 // Предпросмотр для ГАИ
                 if (rooms.length === 0) {
                     showAlert('Добавьте хотя бы одного участника в список', 'error');
