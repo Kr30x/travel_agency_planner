@@ -4,6 +4,10 @@ REM Скрипт быстрой установки и запуска Hotel Plann
 echo 🏨 Установка Hotel Planner...
 echo.
 
+REM Получаем путь к текущей директории
+set "APP_DIR=%~dp0"
+set "APP_DIR=%APP_DIR:~0,-1%"
+
 REM Проверка Python
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
@@ -28,13 +32,45 @@ if %errorlevel% equ 0 (
     exit /b 1
 )
 
+REM Создание ярлыка на рабочем столе
+echo.
+echo 🔗 Создание ярлыка на рабочем столе...
+
+set "DESKTOP=%USERPROFILE%\Desktop"
+
+REM Создаём VBS скрипт для создания ярлыка
+set "VBS_FILE=%TEMP%\create_shortcut.vbs"
+echo Set oWS = WScript.CreateObject("WScript.Shell") > "%VBS_FILE%"
+echo sLinkFile = "%DESKTOP%\Hotel Planner.lnk" >> "%VBS_FILE%"
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%VBS_FILE%"
+echo oLink.TargetPath = "%APP_DIR%\run.bat" >> "%VBS_FILE%"
+echo oLink.WorkingDirectory = "%APP_DIR%" >> "%VBS_FILE%"
+echo oLink.Description = "Планировщик размещения гостей" >> "%VBS_FILE%"
+echo oLink.Save >> "%VBS_FILE%"
+
+REM Создаём run.bat для запуска приложения
+echo @echo off > "%APP_DIR%\run.bat"
+echo cd /d "%APP_DIR%" >> "%APP_DIR%\run.bat"
+echo start http://localhost:5001 >> "%APP_DIR%\run.bat"
+echo python app.py >> "%APP_DIR%\run.bat"
+echo pause >> "%APP_DIR%\run.bat"
+
+REM Выполняем VBS скрипт
+cscript //nologo "%VBS_FILE%"
+del "%VBS_FILE%"
+
+echo ✓ Ярлык создан на рабочем столе
+
 REM Запуск приложения
 echo.
 echo 🚀 Запуск приложения...
 echo 📍 Приложение будет доступно по адресу: http://localhost:5001
 echo.
+echo 💡 В следующий раз используйте ярлык на рабочем столе!
+echo.
 echo Нажмите Ctrl+C для остановки
 echo.
 
+start http://localhost:5001
 python app.py
 pause

@@ -5,6 +5,9 @@
 echo "🏨 Установка Hotel Planner..."
 echo ""
 
+# Получаем абсолютный путь к директории приложения
+APP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Проверка Python
 if ! command -v python3 &> /dev/null; then
     echo "❌ Python 3 не найден. Установите Python 3.8 или выше."
@@ -25,10 +28,56 @@ else
     exit 1
 fi
 
+# Создание ярлыка на рабочем столе
+echo ""
+echo "🔗 Создание ярлыка на рабочем столе..."
+
+DESKTOP_DIR="$HOME/Desktop"
+if [ ! -d "$DESKTOP_DIR" ]; then
+    DESKTOP_DIR="$HOME/Рабочий стол"
+fi
+
+if [ -d "$DESKTOP_DIR" ]; then
+    # Для macOS создаём исполняемый скрипт
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        SHORTCUT_PATH="$DESKTOP_DIR/Hotel Planner.command"
+        cat > "$SHORTCUT_PATH" << EOF
+#!/bin/bash
+cd "$APP_DIR"
+python3 app.py &
+sleep 2
+open http://localhost:5001
+EOF
+        chmod +x "$SHORTCUT_PATH"
+        echo "✓ Ярлык создан: $SHORTCUT_PATH"
+    
+    # Для Linux создаём .desktop файл
+    else
+        SHORTCUT_PATH="$DESKTOP_DIR/hotel-planner.desktop"
+        cat > "$SHORTCUT_PATH" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Hotel Planner
+Comment=Планировщик размещения гостей
+Exec=bash -c "cd '$APP_DIR' && python3 app.py"
+Icon=applications-office
+Terminal=true
+Categories=Office;
+EOF
+        chmod +x "$SHORTCUT_PATH"
+        echo "✓ Ярлык создан: $SHORTCUT_PATH"
+    fi
+else
+    echo "⚠️  Рабочий стол не найден, ярлык не создан"
+fi
+
 # Запуск приложения
 echo ""
 echo "🚀 Запуск приложения..."
 echo "📍 Приложение будет доступно по адресу: http://localhost:5001"
+echo ""
+echo "💡 В следующий раз используйте ярлык на рабочем столе!"
 echo ""
 echo "Нажмите Ctrl+C для остановки"
 echo ""
