@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Планировщик размещения гостей</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+            background: #fafafa;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 24px 40px 0 40px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .header-top h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .header-top p {
+            font-size: 14px;
+            color: #666;
+            font-weight: 400;
+        }
+
+        .projects-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-top: 16px;
+        }
+
+        .projects-bar::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .projects-bar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .projects-bar::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 2px;
+        }
+
+        .project-tab {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            background: white;
+            color: #666;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .project-tab:hover {
+            border-color: #000;
+            color: #000;
+        }
+
+        .project-tab.active {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+        .project-tab-edit {
+            opacity: 0;
+            transition: opacity 0.15s;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px;
+        }
+
+        .project-tab:hover .project-tab-edit {
+            opacity: 0.5;
+        }
+
+        .project-tab-edit:hover {
+            opacity: 1 !important;
+        }
+
+        .project-tab.active .project-tab-edit {
+            opacity: 0.5;
+        }
+
+        .project-tab.active:hover .project-tab-edit {
+            opacity: 0.7;
+        }
+
+        .project-tab-close {
+            opacity: 0.5;
+            transition: opacity 0.15s;
+            cursor: pointer;
+        }
+
+        .project-tab-close:hover {
+            opacity: 1;
+        }
+
+        .project-tab.active .project-tab-close {
+            opacity: 0.7;
+        }
+
+        .project-tab.active .project-tab-close:hover {
+            opacity: 1;
+        }
+
+        .btn-new-project {
+            padding: 6px 12px;
+            font-size: 13px;
+            background: white;
+            border: 1px dashed #e5e7eb;
+            color: #666;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-new-project:hover {
+            border-color: #000;
+            color: #000;
+            background: white;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: calc(100vh - 100px);
+            position: relative;
+        }
+
+        .sidebar {
+            background: #fafafa;
+            padding: 24px;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+            max-height: calc(100vh - 100px);
+            width: 360px;
+            flex-shrink: 0;
+        }
+
+        .upload-section {
+            margin-bottom: 24px;
+        }
+
+        .upload-section h2 {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 10px 16px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .file-upload-btn:hover {
+            background: #333;
+        }
+
+        .file-upload-btn:active {
+            transform: scale(0.98);
+        }
+
+        .filters-section {
+            margin-bottom: 24px;
+        }
+
+        .filters-section h3 {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            transition: all 0.15s ease;
+            background: white;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 1px #000;
+        }
+
+        .class-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .class-badge {
+            padding: 4px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            background: white;
+            transition: all 0.15s ease;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .class-badge:hover {
+            border-color: #000;
+            color: #000;
+            background: white;
+        }
+
+        .class-badge.active {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+        .guests-list {
+            margin-top: 24px;
+        }
+
+        .guests-list h3 {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .guest-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: grab;
+            border: 1px solid #e5e7eb;
+            transition: all 0.15s ease;
+        }
+
+        .guest-item:hover {
+            border-color: #000;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .guest-item:active {
+            cursor: grabbing;
+        }
+
+        .guest-item.dragging {
+            opacity: 0.5;
+        }
+
+        .guest-item.hidden {
+            display: none;
+        }
+
+        .guest-name {
+            font-weight: 500;
+            color: #000;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .guest-class {
+            display: inline-block;
+            background: #f5f5f5;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            margin-right: 4px;
+        }
+
+        .guest-details {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .workspace {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(100vh - 100px);
+            background: white;
+            flex: 1;
+            min-width: 400px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.15s ease;
+            font-weight: 500;
+            background: white;
+            color: #000;
+        }
+
+        .btn:hover {
+            border-color: #000;
+            background: #fafafa;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #333;
+            border-color: #333;
+        }
+
+        .btn-success {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+        .btn-success:hover {
+            background: #333;
+            border-color: #333;
+        }
+
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .room-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            min-height: 160px;
+            transition: all 0.15s ease;
+        }
+
+        .room-card:hover {
+            border-color: #d4d4d4;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .room-card.drag-over {
+            background: #fafafa;
+            border-color: #000;
+            border-style: solid;
+        }
+
+        .room-card.room-full {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+
+        .room-card.room-full .room-type {
+            background: #ef4444 !important;
+            color: white;
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        .room-title {
+            font-weight: 600;
+            color: #000;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .room-type {
+            background: #f5f5f5;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            margin-right: 8px;
+            font-weight: 500;
+        }
+
+        .delete-room {
+            background: transparent;
+            color: #999;
+            border: none;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .delete-room:hover {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+
+        .room-guests {
+            min-height: 80px;
+        }
+
+        .room-guest-item {
+            background: #fafafa;
+            padding: 10px;
+            padding-right: 32px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            position: relative;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .room-guest-name {
+            font-weight: 500;
+            color: #000;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .room-guest-class {
+            display: inline-block;
+            background: white;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-right: 4px;
+            font-weight: 500;
+            border: 1px solid #e5e7eb;
+        }
+
+        .room-guest-details {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .remove-guest {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            color: #999;
+            border: none;
+            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .remove-guest:hover {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e5e7eb;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #000;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #000;
+            font-size: 13px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.15s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 1px #000;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #000;
+            flex: 1;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-secondary:hover {
+            background: #fafafa;
+            border-color: #000;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-weight: 400;
+            font-size: 13px;
+            border: 1px solid;
+            margin-bottom: 8px;
+            animation: slideIn 0.2s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+
+        #alertContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+            pointer-events: none;
+        }
+
+        #alertContainer .alert {
+            pointer-events: all;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 12px;
+            opacity: 0.2;
+        }
+
+        .preview-panel {
+            background: #fafafa;
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+            width: 400px;
+            min-width: 300px;
+            max-width: 800px;
+        }
+
+        .resizer {
+            width: 6px;
+            background: transparent;
+            cursor: col-resize;
+            position: relative;
+            flex-shrink: 0;
+            transition: background 0.15s ease;
+        }
+
+        .resizer:hover {
+            background: #e5e7eb;
+        }
+
+        .resizer.resizing {
+            background: #000;
+        }
+
+        .resizer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -2px;
+            right: -2px;
+            bottom: 0;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .preview-header h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .preview-container {
+            flex: 1;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+
+        .preview-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            min-height: 600px;
+        }
+
+        .preview-empty {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            padding: 40px;
+        }
+
+        .preview-loading {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .btn-preview {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .gai-list {
+            background: #fafafa;
+            border: 1px dashed #e5e7eb;
+            border-radius: 8px;
+            min-height: 400px;
+            padding: 16px;
+        }
+
+        .gai-list.drag-over {
+            background: #f0f0f0;
+            border-color: #000;
+        }
+
+        .gai-controls {
+            display: flex;
+            gap: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div>
+                    <h1>Планировщик размещения</h1>
+                    <p>Распределите участников по номерам и создайте отчёт</p>
+                </div>
+            </div>
+            <div class="projects-bar" id="projectsBar"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="upload-section">
+                    <h2>Данные</h2>
+                    <div class="file-upload">
+                        <input type="file" id="fileInput" accept=".xlsx, .xls">
+                        <button class="file-upload-btn" onclick="document.getElementById('fileInput').click()">
+                            Загрузить Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filters-section">
+                    <h3>Фильтры</h3>
+                    <input type="text" class="search-box" id="searchBox" placeholder="Поиск по ФИО...">
+
+                    <div style="margin-bottom: 12px;">
+                        <label
+                            style="font-size: 0.9em; color: #555; display: block; margin-bottom: 6px;">Статус:</label>
+                        <div class="class-filter" id="statusFilter"></div>
+                    </div>
+
+                    <div>
+                        <label style="font-size: 0.9em; color: #555; display: block; margin-bottom: 6px;">Класс:</label>
+                        <div class="class-filter" id="classFilter"></div>
+                    </div>
+                </div>
+
+                <div class="guests-list">
+                    <h3>Участники (<span id="guestCount">0</span>)</h3>
+                    <div id="guestsList"></div>
+                </div>
+            </div>
+
+            <div class="workspace" id="hotelInterface">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="openAddRoomModal()">
+                        Добавить номер
+                    </button>
+                    <button class="btn btn-success" onclick="generatePDF()">
+                        Скачать PDF
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearSession()">
+                        Очистить всё
+                    </button>
+                </div>
+
+                <div class="rooms-grid" id="roomsGrid">
+                    <div class="empty-state">
+                        <div style="font-size: 3em; opacity: 0.2;">⬜</div>
+                        <p style="font-size: 13px; color: #999;">Добавьте номера для начала работы</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Интерфейс для ГАИ -->
+            <div class="workspace" id="gaiInterface" style="display: none;">
+                <div class="controls">
+                    <div style="flex: 1; max-width: 400px;">
+                        <input type="text" id="routeInput" class="search-box"
+                            placeholder="Маршрут (например: Москва → Санкт-Петербург)" style="margin: 0;"
+                            oninput="saveCurrentProject()">
+                    </div>
+                    <button class="btn btn-success" onclick="generateGaiPDF()">
+                        Скачать PDF
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearSession()">
+                        Очистить всё
+                    </button>
+                </div>
+
+                <div class="gai-controls" style="margin-bottom: 16px;">
+                    <button class="btn btn-primary" onclick="addClassToGai()">
+                        Добавить весь класс
+                    </button>
+                </div>
+
+                <div class="gai-list" id="gaiList">
+                    <div class="empty-state">
+                        <div style="font-size: 3em; opacity: 0.2;">🚌</div>
+                        <p style="font-size: 13px; color: #999;">Перетащите участников сюда</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="resizer" id="resizer"></div>
+
+            <div class="preview-panel" id="previewPanel">
+                <div class="preview-header">
+                    <h3>Предпросмотр</h3>
+                </div>
+                <div class="preview-container" id="previewContainer">
+                    <div class="preview-empty">
+                        Добавьте участников и распределите их для предпросмотра
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для уведомлений (поверх всего) -->
+    <div id="alertContainer"></div>
+
+    <!-- Модальное окно для создания нового проекта -->
+    <div class="modal" id="newProjectModal">
+        <div class="modal-content">
+            <h2>Создать новый проект</h2>
+            <div class="form-group">
+                <label for="newProjectName">Название проекта</label>
+                <input type="text" id="newProjectName" placeholder="Например: Поездка в музей">
+            </div>
+            <div class="form-group">
+                <label for="projectType">Тип проекта</label>
+                <select id="projectType">
+                    <option value="hotel">🏨 Размещение в отеле</option>
+                    <option value="gai">🚌 Список для ГАИ/транспорт</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeNewProjectModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="confirmNewProject()">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления номера -->
+    <div class="modal" id="addRoomModal">
+        <div class="modal-content">
+            <h2>Добавить номер</h2>
+            <div class="form-group">
+                <label for="roomNumber">Номер комнаты</label>
+                <input type="text" id="roomNumber" placeholder="Например: 101">
+            </div>
+            <div class="form-group">
+                <label for="roomCapacity">Количество мест</label>
+                <select id="roomCapacity">
+                    <option value="1">1 место</option>
+                    <option value="2" selected>2 места</option>
+                    <option value="3">3 места</option>
+                    <option value="4">4 места</option>
+                    <option value="5">5 мест</option>
+                    <option value="6">6 мест</option>
+                    <option value="8">8 мест</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeAddRoomModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="addRoom()">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let guests = [];
+        let rooms = [];
+        let availableClasses = new Set();
+        let availableStatuses = new Set();
+        let selectedClass = '';
+        let selectedStatus = '';
+        let searchQuery = '';
+
+        // Система проектов
+        let projects = [];
+        let activeProjectId = null;
+
+        function initProjects() {
+            const savedProjects = localStorage.getItem('hotel_projects');
+            const savedActiveId = localStorage.getItem('hotel_active_project');
+
+            if (savedProjects) {
+                projects = JSON.parse(savedProjects);
+
+                // Миграция старых проектов - добавляем type если его нет
+                projects = projects.map(project => {
+                    if (!project.type) {
+                        project.type = 'hotel';
+                    }
+                    if (!project.selectedGuests) {
+                        project.selectedGuests = [];
+                    }
+                    if (!project.route) {
+                        project.route = '';
+                    }
+                    return project;
+                });
+
+                // Сохраняем мигрированные проекты
+                saveProjects();
+            }
+
+            if (projects.length === 0) {
+                // Создаём первый проект по умолчанию
+                const firstProject = {
+                    id: Date.now(),
+                    name: 'Новое распределение',
+                    type: 'hotel', // 'hotel' или 'gai'
+                    guests: [],
+                    rooms: [],
+                    selectedGuests: [], // для типа 'gai'
+                    route: '', // для типа 'gai'
+                    created: new Date().toISOString(),
+                    modified: new Date().toISOString()
+                };
+                projects.push(firstProject);
+                activeProjectId = firstProject.id;
+            } else {
+                activeProjectId = savedActiveId ? parseInt(savedActiveId) : projects[0].id;
+            }
+
+            loadProject(activeProjectId);
+        }
+
+        function saveProjects() {
+            localStorage.setItem('hotel_projects', JSON.stringify(projects));
+            localStorage.setItem('hotel_active_project', activeProjectId);
+        }
+
+        function saveCurrentProject() {
+            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+            if (project) {
+                project.guests = guests;
+                if (project.type === 'gai') {
+                    project.selectedGuests = rooms; // для ГАИ используем rooms как selectedGuests
+                    project.route = document.getElementById('routeInput')?.value || '';
+                } else {
+                    project.rooms = rooms;
+                }
+                project.modified = new Date().toISOString();
+                saveProjects();
+            }
+        }
+
+        function loadProject(projectId) {
+            const project = projects.find(p => Number(p.id) === Number(projectId));
+            if (project) {
+                // Обновляем активный проект (сохраняем как число)
+                activeProjectId = Number(project.id);
+
+                // Сохраняем выбор
+                localStorage.setItem('hotel_active_project', activeProjectId);
+
+                console.log('Загружен проект:', project.name, 'ID:', activeProjectId);
+
+                guests = JSON.parse(JSON.stringify(project.guests || []));
+
+                if (project.type === 'gai') {
+                    rooms = JSON.parse(JSON.stringify(project.selectedGuests || []));
+                    // Показываем интерфейс ГАИ
+                    document.getElementById('hotelInterface').style.display = 'none';
+                    document.getElementById('gaiInterface').style.display = 'block';
+                    setTimeout(() => {
+                        if (document.getElementById('routeInput')) {
+                            document.getElementById('routeInput').value = project.route || '';
+                        }
+                    }, 0);
+                } else {
+                    rooms = JSON.parse(JSON.stringify(project.rooms || []));
+                    // Показываем интерфейс размещения
+                    document.getElementById('hotelInterface').style.display = 'block';
+                    document.getElementById('gaiInterface').style.display = 'none';
+                }
+
+                updateFilters();
+                renderGuests();
+                renderRooms();
+                renderGaiList();
+
+                // Важно: рендерим проекты после обновления activeProjectId
+                renderProjects();
+
+                // Очищаем превью
+                document.getElementById('previewContainer').innerHTML = '<div class="preview-empty">Добавьте участников и распределите их для предпросмотра</div>';
+
+                // Пробуем загрузить предпросмотр если есть данные
+                setTimeout(() => {
+                    debouncePreview();
+                }, 500);
+            }
+        }
+
+        function createNewProject() {
+            const modal = document.getElementById('newProjectModal');
+            modal.classList.add('show');
+        }
+
+        function closeNewProjectModal() {
+            document.getElementById('newProjectModal').classList.remove('show');
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('projectType').selectedIndex = 0;
+        }
+
+        function confirmNewProject() {
+            const name = document.getElementById('newProjectName').value.trim();
+            const type = document.getElementById('projectType').value;
+
+            if (!name) {
+                alert('Введите название проекта');
+                return;
+            }
+
+            const newProject = {
+                id: Date.now(),
+                name: name,
+                type: type,
+                guests: [],
+                rooms: [],
+                selectedGuests: [],
+                route: '',
+                created: new Date().toISOString(),
+                modified: new Date().toISOString()
+            };
+
+            projects.push(newProject);
+            closeNewProjectModal();
+            loadProject(newProject.id);
+            showAlert('Проект "' + name + '" создан', 'success');
+        }
+
+        function renameProject(projectId) {
+            const project = projects.find(p => Number(p.id) === Number(projectId));
+            if (!project) return;
+
+            const newName = prompt('Новое название:', project.name);
+            if (!newName || newName === project.name) return;
+
+            project.name = newName;
+            project.modified = new Date().toISOString();
+            saveProjects();
+            renderProjects();
+            showAlert('Проект переименован', 'success');
+        }
+
+        function deleteProject(projectId) {
+            if (projects.length === 1) {
+                showAlert('Нельзя удалить единственный проект', 'error');
+                return;
+            }
+
+            const project = projects.find(p => Number(p.id) === Number(projectId));
+            if (!project) return;
+
+            if (!confirm(`Удалить проект "${project.name}"? Все данные будут потеряны.`)) {
+                return;
+            }
+
+            projects = projects.filter(p => Number(p.id) !== Number(projectId));
+
+            if (Number(activeProjectId) === Number(projectId)) {
+                loadProject(projects[0].id);
+            } else {
+                saveProjects();
+                renderProjects();
+            }
+
+            showAlert('Проект удалён', 'success');
+        }
+
+        function renderProjects() {
+            const container = document.getElementById('projectsBar');
+
+            // Приводим activeProjectId к числу для корректного сравнения
+            const currentId = Number(activeProjectId);
+
+            container.innerHTML = projects.map(project => {
+                const isActive = Number(project.id) === currentId;
+                const typeIcon = project.type === 'gai' ? '🚌' : '🏨';
+                const guestCount = project.guests ? project.guests.length : 0;
+                const roomCount = project.type === 'gai'
+                    ? (project.selectedGuests ? project.selectedGuests.length : 0)
+                    : (project.rooms ? project.rooms.filter(r => r.guests && r.guests.length > 0).length : 0);
+
+                return `
+                    <div class="project-tab ${isActive ? 'active' : ''}" 
+                         onclick="if (event.target === this || event.target.tagName === 'SPAN' && event.target.className.includes('project-name')) loadProject(${project.id})">
+                        <span>${typeIcon}</span>
+                        <span class="project-name">${project.name}</span>
+                        ${project.type === 'gai' && roomCount > 0 ? `<span style="opacity: 0.6; font-size: 11px;">(${roomCount})</span>` : ''}
+                        ${project.type !== 'gai' && roomCount > 0 ? `<span style="opacity: 0.6; font-size: 11px;">(${roomCount})</span>` : ''}
+                        <span class="project-tab-edit" 
+                              onclick="event.stopPropagation(); renameProject(${project.id})"
+                              title="Переименовать">✎</span>
+                        ${projects.length > 1 ? `
+                            <span class="project-tab-close" 
+                                  onclick="event.stopPropagation(); deleteProject(${project.id})"
+                                  title="Удалить проект">×</span>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('') + `
+                <button class="btn btn-new-project" onclick="createNewProject()">
+                    + Новый проект
+                </button>
+            `;
+        }
+
+        // Сохранение и загрузка состояния (ОБНОВЛЕНО для работы с проектами)
+        function saveState() {
+            saveCurrentProject();
+            // Автоматически обновляем предпросмотр при изменениях
+            debouncePreview();
+        }
+
+        // Debounce для предпросмотра (не обновлять слишком часто)
+        let previewTimeout;
+        function debouncePreview() {
+            clearTimeout(previewTimeout);
+            previewTimeout = setTimeout(() => {
+                updatePreviewAuto();
+            }, 1000); // Обновляем через 1 секунду после последнего изменения
+        }
+
+        async function updatePreviewAuto() {
+            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+            const container = document.getElementById('previewContainer');
+            
+            // Проверяем есть ли что показывать
+            if (project && project.type === 'gai') {
+                if (rooms.length === 0) return;
+                const route = document.getElementById('routeInput')?.value.trim() || '';
+                if (!route) return;
+            } else {
+                const roomsWithGuests = rooms.filter(r => r.guests && r.guests.length > 0);
+                if (roomsWithGuests.length === 0) return;
+            }
+
+            // Вызываем обычную функцию обновления
+            await updatePreview();
+        }
+
+        function loadState() {
+            // Старая система - мигрируем если есть
+            const oldGuests = localStorage.getItem('hotel_guests');
+            const oldRooms = localStorage.getItem('hotel_rooms');
+
+            if (oldGuests || oldRooms) {
+                // Мигрируем старые данные в новый проект
+                const migrationProject = {
+                    id: Date.now(),
+                    name: 'Импортированное распределение',
+                    guests: oldGuests ? JSON.parse(oldGuests) : [],
+                    rooms: oldRooms ? JSON.parse(oldRooms) : [],
+                    created: new Date().toISOString(),
+                    modified: new Date().toISOString()
+                };
+
+                projects = [migrationProject];
+                activeProjectId = migrationProject.id;
+
+                // Удаляем старые ключи
+                localStorage.removeItem('hotel_guests');
+                localStorage.removeItem('hotel_rooms');
+
+                saveProjects();
+                showAlert('Данные импортированы в новую систему проектов', 'success');
+            }
+        }
+
+        function clearSession() {
+            if (confirm('Вы уверены? Все данные текущего проекта будут удалены.')) {
+                const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+                if (project) {
+                    project.guests = [];
+                    project.rooms = [];
+                    project.modified = new Date().toISOString();
+                }
+                
+                guests = [];
+                rooms = [];
+                selectedClass = '';
+                selectedStatus = '';
+                searchQuery = '';
+                document.getElementById('searchBox').value = '';
+                
+                saveProjects();
+                renderGuests();
+                renderRooms();
+                renderProjects();
+                showAlert('Данные проекта очищены', 'success');
+            }
+        }
+
+        // Загрузка файла
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    guests = data.guests;
+                    updateFilters();
+                    renderGuests();
+                    saveState();
+                    showAlert('Файл успешно загружен! Участников: ' + guests.length, 'success');
+
+                    // Автоматически обновляем предпросмотр
+                    debouncePreview();
+                } else {
+                    showAlert('Ошибка: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Ошибка загрузки файла: ' + error.message, 'error');
+            }
+        });
+
+        // Поиск
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            renderGuests();
+        });
+
+        function updateFilters() {
+            // Обновляем статусы
+            availableStatuses.clear();
+            guests.forEach(g => {
+                if (g.status) availableStatuses.add(g.status);
+            });
+
+            const statusContainer = document.getElementById('statusFilter');
+            const sortedStatuses = Array.from(availableStatuses).sort();
+
+            statusContainer.innerHTML = `
+                <div class="class-badge ${selectedStatus === '' ? 'active' : ''}" onclick="filterByStatus('')">
+                    Все
+                </div>
+                ${sortedStatuses.map(status => `
+                    <div class="class-badge ${selectedStatus === status ? 'active' : ''}" onclick="filterByStatus('${status}')">
+                        ${status}
+                    </div>
+                `).join('')}
+            `;
+
+            // Обновляем классы
+            availableClasses.clear();
+            guests.forEach(g => {
+                if (g.class && g.class !== '-') availableClasses.add(g.class);
+            });
+
+            const classContainer = document.getElementById('classFilter');
+            const sortedClasses = Array.from(availableClasses).sort();
+
+            classContainer.innerHTML = `
+                <div class="class-badge ${selectedClass === '' ? 'active' : ''}" onclick="filterByClass('')">
+                    Все
+                </div>
+                ${sortedClasses.map(cls => `
+                    <div class="class-badge ${selectedClass === cls ? 'active' : ''}" onclick="filterByClass('${cls}')">
+                        ${cls}
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function filterByStatus(status) {
+            selectedStatus = status;
+            updateFilters();
+            renderGuests();
+        }
+
+        function filterByClass(className) {
+            selectedClass = className;
+            updateFilters();
+            renderGuests();
+        }
+
+        function renderGuests() {
+            const container = document.getElementById('guestsList');
+            let availableGuests = guests.filter(g => !isGuestInRoom(g.id));
+
+            // Применяем фильтр по статусу
+            if (selectedStatus) {
+                availableGuests = availableGuests.filter(g => g.status === selectedStatus);
+            }
+
+            // Применяем фильтр по классу
+            if (selectedClass) {
+                availableGuests = availableGuests.filter(g => g.class === selectedClass);
+            }
+
+            // Применяем поиск
+            if (searchQuery) {
+                availableGuests = availableGuests.filter(g =>
+                    g.full_name.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            document.getElementById('guestCount').textContent = availableGuests.length;
+
+            if (availableGuests.length === 0) {
+                if (searchQuery || selectedClass || selectedStatus) {
+                    container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">Нет результатов</p>';
+                } else {
+                    container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">Все участники размещены</p>';
+                }
+                return;
+            }
+
+            container.innerHTML = availableGuests.map(guest => {
+                const statusColor = (guest.status || guest.role) === 'Учитель' ? '#10b981' : '#667eea';
+                const classDisplay = guest.class && guest.class !== '-' ? guest.class : '';
+
+                return `
+                <div class="guest-item" draggable="true" data-guest-id="${guest.id}">
+                    <div class="guest-name">${guest.full_name}</div>
+                    <div style="margin-bottom: 4px;">
+                        <span class="guest-class" style="background: ${statusColor}">${guest.status || guest.role || 'Ученик'}</span>
+                        ${classDisplay ? `<span class="guest-class">${classDisplay}</span>` : ''}
+                    </div>
+                    <div class="guest-details">
+                        📅 ${guest.birth_date}<br>
+                        📱 ${guest.parent_contact}<br>
+                        🆔 ${guest.passport}
+                    </div>
+                </div>
+            `}).join('');
+
+            // Добавляем обработчики drag
+            document.querySelectorAll('.guest-item').forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        function isGuestInRoom(guestId) {
+            // Проверяем, есть ли гость хотя бы в одном номере
+            const found = rooms.some(room =>
+                room.guests && room.guests.some(g => String(g.id) === String(guestId))
+            );
+            return found;
+        }
+
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.innerHTML);
+            e.dataTransfer.setData('guestId', e.target.dataset.guestId);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function openAddRoomModal() {
+            document.getElementById('addRoomModal').classList.add('show');
+        }
+
+        function closeAddRoomModal() {
+            document.getElementById('addRoomModal').classList.remove('show');
+            document.getElementById('roomNumber').value = '';
+            document.getElementById('roomCapacity').selectedIndex = 1; // По умолчанию 2 места
+        }
+
+        function addRoom() {
+            const number = document.getElementById('roomNumber').value.trim();
+            const capacity = parseInt(document.getElementById('roomCapacity').value);
+
+            if (!number) {
+                alert('Пожалуйста, введите номер комнаты');
+                return;
+            }
+
+            const room = {
+                id: Date.now(),
+                number: number,
+                capacity: capacity,
+                guests: []
+            };
+
+            rooms.push(room);
+            renderRooms();
+            closeAddRoomModal();
+            saveState();
+            showAlert('Номер ' + number + ' добавлен', 'success');
+        }
+
+        function renderRooms() {
+            const container = document.getElementById('roomsGrid');
+
+            if (rooms.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 4em; opacity: 0.3;">🏨</div>
+                        <p>Добавьте номера, чтобы начать распределение</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = rooms.map(room => {
+                const capacityText = room.capacity === 1 ? '1 место' : `${room.capacity} мест`;
+                const occupancy = room.guests.length;
+                const isFull = occupancy >= room.capacity;
+                const occupancyColor = isFull ? '#ef4444' : (occupancy > 0 ? '#10b981' : '#6c757d');
+
+                return `
+                <div class="room-card ${isFull ? 'room-full' : ''}" data-room-id="${room.id}">
+                    <div class="room-header">
+                        <div class="room-title">Номер ${room.number}</div>
+                        <div class="room-type" style="background: ${occupancyColor}">
+                            ${occupancy}/${room.capacity} • ${capacityText}
+                        </div>
+                        <button class="delete-room" onclick="deleteRoom(${room.id})" title="Удалить номер">🗑</button>
+                    </div>
+                    <div class="room-guests">
+                        ${room.guests.length === 0
+                        ? '<p style="color: #999; text-align: center; padding: 20px;">Перетащите участников сюда</p>'
+                        : room.guests.map(guest => {
+                            const statusColor = (guest.status || guest.role) === 'Учитель' ? '#10b981' : '#667eea';
+                            const classDisplay = guest.class && guest.class !== '-' ? guest.class : '';
+
+                            return `
+                                <div class="room-guest-item">
+                                    <button class="remove-guest" onclick="removeGuestFromRoom(${room.id}, ${guest.id})">×</button>
+                                    <div class="room-guest-name">${guest.full_name}</div>
+                                    <div class="room-guest-details">
+                                        <span class="room-guest-class" style="background: ${statusColor}">${guest.status || guest.role || 'Ученик'}</span>
+                                        ${classDisplay ? `<span class="room-guest-class">${classDisplay}</span>` : ''}
+                                        ${guest.birth_date} • ${guest.passport}
+                                    </div>
+                                </div>
+                            `}).join('')
+                    }
+                    </div>
+                </div>
+            `}).join('');
+
+            // Добавляем обработчики drop
+            document.querySelectorAll('.room-card').forEach(card => {
+                card.addEventListener('dragover', handleDragOver);
+                card.addEventListener('drop', handleDrop);
+                card.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+
+            const guestId = parseInt(e.dataTransfer.getData('guestId'));
+            const roomId = parseInt(e.currentTarget.dataset.roomId);
+
+            const guest = guests.find(g => g.id === guestId);
+            const room = rooms.find(r => r.id === roomId);
+
+            if (guest && room && !isGuestInRoom(guestId)) {
+                // Проверяем, не переполнен ли номер
+                if (room.guests.length >= room.capacity) {
+                    showAlert(`Номер ${room.number} заполнен (вместимость: ${room.capacity})`, 'error');
+                    return;
+                }
+
+                room.guests.push(guest);
+                renderGuests();
+                renderRooms();
+                saveState();
+            }
+        }
+
+        function removeGuestFromRoom(roomId, guestId) {
+            const room = rooms.find(r => r.id === roomId);
+            if (room) {
+                room.guests = room.guests.filter(g => g.id !== guestId);
+                renderGuests();
+                renderRooms();
+                saveState();
+            }
+        }
+
+        function deleteRoom(roomId) {
+            const room = rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            const guestCount = room.guests.length;
+            let confirmMessage = `Удалить номер ${room.number}?`;
+
+            if (guestCount > 0) {
+                confirmMessage = `В номере ${room.number} размещено ${guestCount} ${guestCount === 1 ? 'человек' : 'человека'}. Они вернутся в список доступных. Удалить номер?`;
+            }
+
+            if (confirm(confirmMessage)) {
+                rooms = rooms.filter(r => r.id !== roomId);
+                renderGuests();
+                renderRooms();
+                saveState();
+                showAlert(`Номер ${room.number} удалён`, 'success');
+            }
+        }
+
+        // ============= ГАИ ФУНКЦИИ =============
+
+        function renderGaiList() {
+            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+            if (!project || project.type !== 'gai') return;
+
+            const container = document.getElementById('gaiList');
+            if (!container) return; // Безопасная проверка
+
+            if (rooms.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3em; opacity: 0.2;">🚌</div>
+                        <p style="font-size: 13px; color: #999;">Перетащите участников сюда или добавьте весь класс</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = rooms.map((guest, index) => {
+                const statusColor = (guest.status || guest.role) === 'Учитель' ? '#10b981' : '#667eea';
+                const classDisplay = guest.class && guest.class !== '-' ? guest.class : '';
+
+                return `
+                    <div class="room-guest-item" style="margin-bottom: 8px;">
+                        <button class="remove-guest" onclick="removeFromGaiList(${index})">×</button>
+                        <div class="room-guest-name">${index + 1}. ${guest.full_name}</div>
+                        <div class="room-guest-details">
+                            <span class="room-guest-class" style="background: ${statusColor}">${guest.status || guest.role}</span>
+                            ${classDisplay ? `<span class="room-guest-class">${classDisplay}</span>` : ''}
+                            ${guest.birth_date} • ${guest.parent_contact}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Добавляем drag & drop
+            container.addEventListener('dragover', handleGaiDragOver);
+            container.addEventListener('drop', handleGaiDrop);
+            container.addEventListener('dragleave', (e) => {
+                if (e.target === container) {
+                    container.classList.remove('drag-over');
+                }
+            });
+        }
+
+        function handleGaiDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            document.getElementById('gaiList').classList.add('drag-over');
+        }
+
+        function handleGaiDrop(e) {
+            e.preventDefault();
+            const container = document.getElementById('gaiList');
+            container.classList.remove('drag-over');
+
+            const guestId = parseInt(e.dataTransfer.getData('guestId'));
+            const guest = guests.find(g => g.id === guestId);
+
+            if (guest && !rooms.find(g => g.id === guestId)) {
+                rooms.push(guest);
+                renderGuests();
+                renderGaiList();
+                saveState();
+            }
+        }
+
+        function removeFromGaiList(index) {
+            rooms.splice(index, 1);
+            renderGuests();
+            renderGaiList();
+            saveState();
+        }
+
+        function addClassToGai() {
+            // Получаем все доступные классы
+            const classes = Array.from(new Set(
+                guests.filter(g => g.class && g.class !== '-' && !rooms.find(r => r.id === g.id))
+                    .map(g => g.class)
+            )).sort();
+
+            if (classes.length === 0) {
+                showAlert('Нет доступных классов для добавления', 'error');
+                return;
+            }
+
+            const selectedClass = prompt(`Выберите класс для добавления:\n${classes.join(', ')}`, classes[0]);
+            if (!selectedClass) return;
+
+            const classGuests = guests.filter(g =>
+                g.class === selectedClass && !rooms.find(r => r.id === g.id)
+            );
+
+            if (classGuests.length === 0) {
+                showAlert(`В классе ${selectedClass} нет доступных участников`, 'error');
+                return;
+            }
+
+            rooms.push(...classGuests);
+            renderGuests();
+            renderGaiList();
+            saveState();
+            showAlert(`Добавлено ${classGuests.length} участников из класса ${selectedClass}`, 'success');
+        }
+
+        async function generateGaiPDF() {
+            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+            if (rooms.length === 0) {
+                showAlert('Добавьте хотя бы одного участника в список', 'error');
+                return;
+            }
+
+            const route = document.getElementById('routeInput').value.trim();
+            if (!route) {
+                showAlert('Укажите маршрут', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/generate-gai-pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        guests: rooms,
+                        route: route
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('PDF успешно создан! Скачивание начнётся автоматически...', 'success');
+                    window.location.href = '/download/' + data.filename;
+                } else {
+                    showAlert('Ошибка: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Ошибка создания PDF: ' + error.message, 'error');
+            }
+        }
+
+        async function updatePreview() {
+            const project = projects.find(p => Number(p.id) === Number(activeProjectId));
+            const container = document.getElementById('previewContainer');
+
+            if (project && project.type === 'gai') {
+                // Предпросмотр для ГАИ
+                if (rooms.length === 0) {
+                    showAlert('Добавьте хотя бы одного участника в список', 'error');
+                    return;
+                }
+
+                const route = document.getElementById('routeInput')?.value.trim() || '';
+                if (!route) {
+                    showAlert('Укажите маршрут', 'error');
+                    return;
+                }
+
+                container.innerHTML = '<div class="preview-loading">Генерация предпросмотра...</div>';
+
+                try {
+                    const response = await fetch('/generate-gai-preview', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            guests: rooms,
+                            route: route
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const timestamp = new Date().getTime();
+                        container.innerHTML = `<iframe src="/preview/${data.filename}?t=${timestamp}"></iframe>`;
+                    } else {
+                        container.innerHTML = '<div class="preview-empty">Ошибка: ' + data.error + '</div>';
+                        showAlert('Ошибка: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    container.innerHTML = '<div class="preview-empty">Ошибка загрузки предпросмотра</div>';
+                    showAlert('Ошибка создания предпросмотра: ' + error.message, 'error');
+                }
+            } else {
+                // Предпросмотр для размещения
+                const roomsWithGuests = rooms.filter(r => r.guests && r.guests.length > 0);
+
+                if (roomsWithGuests.length === 0) {
+                    showAlert('Разместите хотя бы одного участника в номере', 'error');
+                    return;
+                }
+
+                container.innerHTML = '<div class="preview-loading">Генерация предпросмотра...</div>';
+
+                try {
+                    const response = await fetch('/generate-preview', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ rooms: roomsWithGuests })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const timestamp = new Date().getTime();
+                        container.innerHTML = `<iframe src="/preview/${data.filename}?t=${timestamp}"></iframe>`;
+                    } else {
+                        container.innerHTML = '<div class="preview-empty">Ошибка: ' + data.error + '</div>';
+                        showAlert('Ошибка: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    container.innerHTML = '<div class="preview-empty">Ошибка загрузки предпросмотра</div>';
+                    showAlert('Ошибка создания предпросмотра: ' + error.message, 'error');
+                }
+            }
+        }
+
+        async function generatePDF() {
+            if (rooms.length === 0) {
+                showAlert('Добавьте хотя бы один номер', 'error');
+                return;
+            }
+
+            const roomsWithGuests = rooms.filter(r => r.guests.length > 0);
+            if (roomsWithGuests.length === 0) {
+                showAlert('Разместите хотя бы одного гостя в номере', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/generate-pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ rooms: roomsWithGuests })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('PDF успешно создан! Скачивание начнётся автоматически...', 'success');
+                    window.location.href = '/download/' + data.filename;
+                } else {
+                    showAlert('Ошибка: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Ошибка создания PDF: ' + error.message, 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.style.animation = 'slideOut 0.2s ease';
+                setTimeout(() => {
+                    alert.remove();
+                }, 200);
+            }, 4000);
+        }
+
+        // Resizable panels
+        let isResizing = false;
+        const resizer = document.getElementById('resizer');
+        const previewPanel = document.getElementById('previewPanel');
+
+        function initResizer() {
+            // Загружаем сохранённую ширину
+            const savedWidth = localStorage.getItem('preview_width');
+            if (savedWidth) {
+                previewPanel.style.width = savedWidth + 'px';
+            }
+
+            resizer.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                resizer.classList.add('resizing');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const containerRect = previewPanel.parentElement.getBoundingClientRect();
+                const newWidth = containerRect.right - e.clientX;
+
+                // Ограничиваем ширину
+                if (newWidth >= 300 && newWidth <= 800) {
+                    previewPanel.style.width = newWidth + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('resizing');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+
+                    // Сохраняем ширину
+                    localStorage.setItem('preview_width', previewPanel.offsetWidth);
+                }
+            });
+        }
+
+        // Инициализация - загружаем сохранённое состояние
+        window.addEventListener('DOMContentLoaded', () => {
+            initResizer();
+            initProjects();
+        });
+    </script>
+</body>
+
+</html>
