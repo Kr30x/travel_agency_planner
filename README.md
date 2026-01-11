@@ -31,6 +31,20 @@
 
 ## 🔧 Установка
 
+### ⚡ Быстрая установка (рекомендуется)
+
+**На macOS/Linux:**
+```bash
+./setup.sh
+```
+
+**На Windows:**
+```bash
+setup.bat
+```
+
+### 📦 Ручная установка
+
 1. Установите зависимости:
 ```bash
 pip install -r requirements.txt
@@ -42,6 +56,18 @@ python app.py
 ```
 
 3. Откройте браузер и перейдите по адресу: `http://localhost:5001`
+
+### 📥 Быстрая установка на новом ПК (одной командой)
+
+**macOS/Linux:**
+```bash
+cd hotel_planner && ./setup.sh
+```
+
+**Windows:**
+```bash
+cd hotel_planner && setup.bat
+```
 
 ## 📊 Формат Excel файла
 
