@@ -23,6 +23,13 @@ os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
 def setup_fonts():
     """Настройка русских шрифтов для ReportLab"""
+    # Проверяем, не зарегистрированы ли шрифты уже
+    try:
+        pdfmetrics.getFont('RussianFont')
+        return True  # Шрифты уже зарегистрированы
+    except:
+        pass
+    
     # Пробуем найти DejaVu шрифты в системе
     possible_font_paths = [
         # macOS
@@ -434,4 +441,4 @@ def generate_gai_pdf(guests_list, route, output_path):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=False, host='0.0.0.0', port=5001, threaded=True)

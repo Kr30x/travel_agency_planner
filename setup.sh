@@ -38,16 +38,10 @@ if [ ! -d "$DESKTOP_DIR" ]; then
 fi
 
 if [ -d "$DESKTOP_DIR" ]; then
-    # Для macOS создаём исполняемый скрипт
+    # Для macOS создаём ссылку на run.sh
     if [[ "$OSTYPE" == "darwin"* ]]; then
         SHORTCUT_PATH="$DESKTOP_DIR/Hotel Planner.command"
-        cat > "$SHORTCUT_PATH" << EOF
-#!/bin/bash
-cd "$APP_DIR"
-python3 app.py &
-sleep 2
-open http://localhost:5001
-EOF
+        ln -sf "$APP_DIR/run.sh" "$SHORTCUT_PATH"
         chmod +x "$SHORTCUT_PATH"
         echo "✓ Ярлык создан: $SHORTCUT_PATH"
     
@@ -60,7 +54,7 @@ Version=1.0
 Type=Application
 Name=Hotel Planner
 Comment=Планировщик размещения гостей
-Exec=bash -c "cd '$APP_DIR' && python3 app.py"
+Exec=bash "$APP_DIR/run.sh"
 Icon=applications-office
 Terminal=true
 Categories=Office;

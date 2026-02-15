@@ -48,13 +48,6 @@ echo oLink.WorkingDirectory = "%APP_DIR%" >> "%VBS_FILE%"
 echo oLink.Description = "Планировщик размещения гостей" >> "%VBS_FILE%"
 echo oLink.Save >> "%VBS_FILE%"
 
-REM Создаём run.bat для запуска приложения
-echo @echo off > "%APP_DIR%\run.bat"
-echo cd /d "%APP_DIR%" >> "%APP_DIR%\run.bat"
-echo start http://localhost:5001 >> "%APP_DIR%\run.bat"
-echo python app.py >> "%APP_DIR%\run.bat"
-echo pause >> "%APP_DIR%\run.bat"
-
 REM Выполняем VBS скрипт
 cscript //nologo "%VBS_FILE%"
 del "%VBS_FILE%"

@@ -839,8 +839,8 @@
                     <h2>Данные</h2>
                     <div class="file-upload">
                         <input type="file" id="fileInput" accept=".xlsx, .xls">
-                        <button class="file-upload-btn" onclick="document.getElementById('fileInput').click()">
-                            Загрузить Excel
+                        <button class="file-upload-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+                            📂 Загрузить данные
                         </button>
                     </div>
                 </div>
@@ -876,7 +876,7 @@
                         Скачать PDF
                     </button>
                     <button class="btn btn-secondary" onclick="clearSession()">
-                        Очистить всё
+                        Очистить распределение
                     </button>
                 </div>
 
@@ -900,7 +900,7 @@
                         Скачать PDF
                     </button>
                     <button class="btn btn-secondary" onclick="clearSession()">
-                        Очистить всё
+                        Очистить распределение
                     </button>
                 </div>
 
@@ -1170,6 +1170,7 @@
             renderRooms();
             renderGaiList();
             renderProjects();
+            updateUploadButton(); // Обновляем текст кнопки загрузки
 
             // Очищаем превью
             document.getElementById('previewContainer').innerHTML = '<div class="preview-empty">Добавьте участников и распределите их для предпросмотра</div>';
@@ -1367,30 +1368,42 @@
             }
         }
 
+        function updateUploadButton() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            if (!uploadBtn) return;
+            
+            const project = getActiveProject();
+            const hasData = project && project.guests && project.guests.length > 0;
+            
+            if (hasData) {
+                uploadBtn.textContent = '🔄 Заменить данные';
+            } else {
+                uploadBtn.textContent = '📂 Загрузить данные';
+            }
+        }
+
         function clearSession() {
-            if (confirm('Вы уверены? Все данные текущего проекта будут удалены.')) {
+            if (confirm('Очистить распределение? Загруженные данные участников останутся.')) {
                 const project = getActiveProject();
                 if (project) {
-                    project.guests = [];
+                    // Очищаем только распределение, НЕ трогаем guests
                     project.rooms = [];
                     project.selectedGuests = [];
                     project.route = '';
                     project.modified = new Date().toISOString();
                 }
                 
-                guests = [];
+                // Очищаем только распределение в текущих данных
                 rooms = [];
-                selectedClass = '';
-                selectedStatus = '';
-                searchQuery = '';
-                document.getElementById('searchBox').value = '';
+                
+                // НЕ очищаем guests, selectedClass, selectedStatus, searchQuery
                 
                 saveProjects();
-                renderGuests();
                 renderRooms();
                 renderGaiList();
-                renderProjects();
-                showAlert('Данные проекта очищены', 'success');
+                renderGuests(); // Перерисовываем гостей, чтобы они снова появились в доступных
+                debouncePreview();
+                showAlert('Распределение очищено, данные участников сохранены', 'success');
             }
         }
 
@@ -1398,6 +1411,17 @@
         document.getElementById('fileInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+
+            // Проверяем, есть ли уже загруженные данные
+            const project = getActiveProject();
+            const hasData = project && project.guests && project.guests.length > 0;
+            
+            if (hasData) {
+                if (!confirm('Заменить текущие данные? Это также очистит распределение.')) {
+                    e.target.value = '';
+                    return;
+                }
+            }
 
             const formData = new FormData();
             formData.append('file', file);
@@ -1412,13 +1436,32 @@
 
                 if (data.success) {
                     guests = data.guests;
+                    
+                    // При загрузке новых данных очищаем распределение
+                    rooms = [];
+                    
+                    // Сохраняем в активный проект
+                    if (project) {
+                        project.guests = guests;
+                        project.rooms = [];
+                        project.selectedGuests = [];
+                        project.route = '';
+                        project.modified = new Date().toISOString();
+                        saveProjects();
+                    }
+                    
                     updateFilters();
                     renderGuests();
-                    saveState();
+                    renderRooms();
+                    renderGaiList();
+                    updateUploadButton(); // Обновляем текст кнопки
                     showAlert('Файл успешно загружен! Участников: ' + guests.length, 'success');
 
                     // Автоматически обновляем предпросмотр
                     debouncePreview();
+                    
+                    // Сбрасываем input, чтобы можно было загрузить тот же файл снова
+                    e.target.value = '';
                 } else {
                     showAlert('Ошибка: ' + data.error, 'error');
                 }
